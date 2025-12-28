@@ -3,23 +3,48 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+/**
+ * Implémentation "naïve" d'une deque basée sur un tableau classique.
+ * - Ajout/retrait en fin : O(1) amorti
+ * - Ajout/retrait en tête : O(n) à cause des décalages (shift)
+ *
+ * @param <E> type des éléments stockés
+ */
 public class ArrayDequeNaive<E> implements DequeInterface<E> {
 
     private Object[] elements;
+
     private int size;
 
+    /**
+     * Compteur
+     */
     public static long nbOp = 0;
 
+    /** Construit une deque avec une capacité initiale par défaut (10). */
     public ArrayDequeNaive() {
         this(10);
     }
 
+    /**
+     * Construit une deque avec une capacité initiale donnée.
+     * Si la capacité est <= 0, alors 10.
+     *
+     * @param capacity capacité initiale souhaitée
+     */
     public ArrayDequeNaive(int capacity) {
         if (capacity <= 0) capacity = 10;
         this.elements = new Object[capacity];
         this.size = 0;
     }
 
+    /**
+     * Garantit une capacité minimale pour pouvoir insérer minCapacity éléments.
+     * Si nécessaire, redimensionne le tableau (x2) et recopie les éléments
+     * dans le même ordre (indices 0..size-1).
+     *
+     * @param minCapacity capacité minimale requise
+     */
     private void ensureCapacity(int minCapacity) {
         nbOp++;
         if (minCapacity <= elements.length) return;
@@ -32,13 +57,19 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         elements = newArr;
     }
 
+    /**
+     * Ajoute un élément en tête.
+     * Nécessite de décaler tous les éléments d'une case vers la droite (O(n)).
+     *
+     * @param e élément à ajouter (non null)
+     * @throws NullPointerException si e est null
+     */
     @Override
     public void offerFirst(E e) throws NullPointerException {
         nbOp++;
         if (e == null) throw new NullPointerException();
         ensureCapacity(size + 1);
 
-        // shift right
         for (int i = size; i > 0; i--) {
             nbOp++;
             elements[i] = elements[i - 1];
@@ -47,6 +78,12 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         size++;
     }
 
+    /**
+     * Ajoute un élément en queue (fin du tableau logique).
+     *
+     * @param e élément à ajouter (non null)
+     * @throws NullPointerException si e est null
+     */
     @Override
     public void offerLast(E e) throws NullPointerException {
         nbOp++;
@@ -55,6 +92,13 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         elements[size++] = e;
     }
 
+    /**
+     * Retire et retourne l'élément en tête.
+     * Nécessite de décaler tous les éléments d'une case vers la gauche (O(n)).
+     *
+     * @return élément en tête
+     * @throws EmptyCollectionException si la deque est vide
+     */
     @Override
     public E removeFirst() throws EmptyCollectionException {
         nbOp++;
@@ -62,7 +106,6 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         @SuppressWarnings("unchecked")
         E val = (E) elements[0];
 
-        // shift left
         for (int i = 0; i < size - 1; i++) {
             nbOp++;
             elements[i] = elements[i + 1];
@@ -72,6 +115,12 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return val;
     }
 
+    /**
+     * Retire et retourne l'élément en queue.
+     *
+     * @return élément en queue
+     * @throws EmptyCollectionException si la deque est vide
+     */
     @Override
     public E removeLast() throws EmptyCollectionException {
         nbOp++;
@@ -83,6 +132,12 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return val;
     }
 
+    /**
+     * Retourne (sans retirer) l'élément en tête.
+     *
+     * @return élément en tête
+     * @throws EmptyCollectionException si la deque est vide
+     */
     @Override
     public E peekFirst() throws EmptyCollectionException {
         nbOp++;
@@ -92,6 +147,12 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return val;
     }
 
+    /**
+     * Retourne (sans retirer) l'élément en queue.
+     *
+     * @return élément en queue
+     * @throws EmptyCollectionException si la deque est vide
+     */
     @Override
     public E peekLast() throws EmptyCollectionException {
         nbOp++;
@@ -101,12 +162,24 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return val;
     }
 
+    /**
+     * Retourne le nombre d'éléments présents.
+     *
+     * @return taille de la deque
+     */
     @Override
     public int size() {
         nbOp++;
         return size;
     }
 
+    /**
+     * Indique si la deque contient l'objet o (comparaison via equals).
+     *
+     * @param o objet recherché (non null)
+     * @return true si trouvé, sinon false
+     * @throws NullPointerException si o est null
+     */
     @Override
     public boolean contains(Object o) throws NullPointerException {
         nbOp++;
@@ -118,6 +191,13 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return false;
     }
 
+    /**
+     * Indique si la deque contient tous les éléments de la collection c.
+     * Les éléments null de c sont ignorés.
+     *
+     * @param c collection à tester (non null)
+     * @return true si tous les éléments (non null) sont présents, sinon false
+     */
     @Override
     public boolean containsAll(Collection<?> c) {
         nbOp++;
@@ -130,6 +210,15 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return true;
     }
 
+    /**
+     * Ajoute tous les éléments de la collection c dans la deque.
+     * Ici, l'ajout se fait en tête (offerFirst) : cela inverse l'ordre relatif
+     * si c est parcourue de gauche à droite.
+     * Les éléments null sont ignorés.
+     *
+     * @param c collection source (non null)
+     * @return true si au moins un élément a été ajouté, sinon false
+     */
     @Override
     public boolean offerAll(Collection<? extends E> c) {
         nbOp++;
@@ -144,6 +233,12 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return changed;
     }
 
+    /**
+     * Vérifie s'il existe au moins un élément qui satisfait le prédicat filter.
+     *
+     * @param filter prédicat (non null)
+     * @return true si un élément valide le prédicat, sinon false
+     */
     @Override
     public boolean containsIf(Predicate<? super E> filter) {
         nbOp++;
@@ -157,6 +252,11 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return false;
     }
 
+    /**
+     * Applique une action à chaque élément dans l'ordre (0..size-1).
+     *
+     * @param action action à exécuter (non null)
+     */
     @Override
     public void forEach(Consumer<? super E> action) {
         nbOp++;
@@ -169,6 +269,11 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         }
     }
 
+    /**
+     * Retourne une copie des éléments dans un tableau (ordre 0..size-1).
+     *
+     * @return tableau contenant les éléments de la deque
+     */
     @Override
     public Object[] toArray() {
         nbOp++;
@@ -180,6 +285,11 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         return arr;
     }
 
+    /**
+     * Représentation texte de la deque sous la forme [a, b, c].
+     *
+     * @return chaîne représentant la deque
+     */
     @Override
     public String toString() {
         nbOp++;
@@ -191,5 +301,6 @@ public class ArrayDequeNaive<E> implements DequeInterface<E> {
         }
         sb.append("]");
         return sb.toString();
+
     }
 }

@@ -15,7 +15,6 @@ class BigPriorityQueueTest {
         return new BigPriorityQueue<>(cmp);
     }
 
-    /** Vide la queue en poll() jusqu'à null, et renvoie la concat en String pour comparer facilement. */
     private static <T> String drainToString(BigPriorityQueueInterface<T> q) {
         StringBuilder sb = new StringBuilder("[");
         boolean first = true;
@@ -122,8 +121,6 @@ class BigPriorityQueueTest {
 
         @Test
         void insertionObjetNonComparable_provoqueClassCast_surComparaison() {
-            // Dans ton code: 1er offer(Object) passe (pas de compare car queue vide)
-            // 2e offer(Object) => compare() cast en Comparable => ClassCastException
             @SuppressWarnings({ "rawtypes", "unchecked" })
             BigPriorityQueueInterface raw = newNaturalQueue();
 
@@ -140,7 +137,6 @@ class BigPriorityQueueTest {
 
         @Test
         void comparator_est_utilise_pour_le_cut() {
-            // comparator inversé: "plus petit" = valeur plus GRANDE
             Comparator<Integer> reverse = (a, b) -> Integer.compare(b, a);
             var q = newComparatorQueue(reverse);
 
